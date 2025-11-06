@@ -182,6 +182,9 @@ enum RawSourceType {
   SOURCE_TYPE_SPACEMOUSE,
   SOURCE_TYPE_TIMER,
   SOURCE_TYPE_FUNCTIONSWITCH_GROUP,
+  SOURCE_TYPE_CURVE,
+  SOURCE_TYPE_CURVE_FUNC,
+  SOURCE_TYPE_NUMBER,
   MAX_SOURCE_TYPE
 };
 
@@ -228,21 +231,25 @@ class RawSourceRange
 #define RANGE_DELTA_FUNCTION      1
 #define RANGE_ABS_FUNCTION        2
 
+constexpr int CURVE_FUNCS_COUNT { 6 };
+
 class RawSource {
   Q_DECLARE_TR_FUNCTIONS(RawSource)
 
   public:
     enum SourceGroups {
-      NoneGroup      = 0x001,
-      SourcesGroup   = 0x002,
-      TrimsGroup     = 0x004,
-      SwitchesGroup  = 0x008,
-      GVarsGroup     = 0x010,
-      TelemGroup     = 0x020,
-      InputsGroup    = 0x040,
-      ScriptsGroup   = 0x080,
-      NegativeGroup  = 0x100,
-      PositiveGroup  = 0x200,
+      NoneGroup       = 0x001,
+      SourcesGroup    = 0x002,
+      TrimsGroup      = 0x004,
+      SwitchesGroup   = 0x008,
+      GVarsGroup      = 0x010,
+      TelemGroup      = 0x020,
+      InputsGroup     = 0x040,
+      ScriptsGroup    = 0x080,
+      NegativeGroup   = 0x100,
+      PositiveGroup   = 0x200,
+      CurvesGroup     = 0x400,
+      CurveFuncsGroup = 0x800,
 
       InputSourceGroups = NoneGroup | SourcesGroup | TrimsGroup | SwitchesGroup | InputsGroup,
       AllSourceGroups   = InputSourceGroups | GVarsGroup | TelemGroup | ScriptsGroup

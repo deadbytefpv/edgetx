@@ -119,7 +119,26 @@ Node convert<CurveReference>::encode(const CurveReference& rhs)
 {
   Node node;
   node["type"] = (int)rhs.type;
-  node["value"] = YamlSourceNumRefEncode(rhs.value);
+  RawSourceType type = RawSourceType::SOURCE_TYPE_NONE;
+  int idx = 0;
+
+  switch ((int)rhs.type) {
+    case CurveReference::CURVE_REF_DIFF:
+    case CurveReference::CURVE_REF_EXPO:
+      type = RawSource(rhs.value).type;
+      idx = RawSource(rhs.value).index;
+      break;
+    case CurveReference::CURVE_REF_FUNC:
+      type = RawSourceType::SOURCE_TYPE_CURVE_FUNC;
+      break;
+    case CurveReference::CURVE_REF_CUSTOM:
+      type = RawSourceType::SOURCE_TYPE_CURVE;
+      break;
+    default:
+      break;
+  }
+  const RawSource src(type, idx);
+  node["value"] = YamlRawSourceEncode(src);
   return node;
 }
 
@@ -130,7 +149,7 @@ bool convert<CurveReference>::decode(const Node& node, CurveReference& rhs)
   node["type"] >> type;
   rhs.type = (CurveReference::CurveRefType)type;
   if (node["value"]) {
-    rhs.value = YamlSourceNumRefDecode(node["value"]);
+    rhs.value = YamlRawSourceDecode(node["value"]);
   }
   return true;
 }
@@ -140,7 +159,7 @@ Node convert<MixData>::encode(const MixData& rhs)
   Node node;
   node["destCh"] = rhs.destCh - 1;
   node["srcRaw"] = rhs.srcRaw;
-  node["weight"] = YamlSourceNumRefEncode(rhs.weight);
+  node["weight"] = rhs.weight;
   node["swtch"] = rhs.swtch;
   node["curve"] = rhs.curve;
   node["delayPrec"] = rhs.delayPrec;
@@ -153,7 +172,7 @@ Node convert<MixData>::encode(const MixData& rhs)
   node["mltpx"] = rhs.mltpx;
   node["mixWarn"] = rhs.mixWarn;
   node["flightModes"] = YamlWriteFlightModes(rhs.flightModes);
-  node["offset"] = YamlSourceNumRefEncode(rhs.sOffset);
+  node["offset"] = rhs.offset;
   node["name"] = rhs.name;
   return node;
 }
@@ -162,9 +181,7 @@ bool convert<MixData>::decode(const Node& node, MixData& rhs)
 {
   node["destCh"] >> ioffset_int((int&)rhs.destCh, -1);
   node["srcRaw"] >> rhs.srcRaw;
-  if (node["weight"]) {
-    rhs.weight = YamlSourceNumRefDecode(node["weight"]);
-  }
+  node["weight"] >> rhs.weight;
   node["swtch"] >> rhs.swtch;
   node["curve"] >> rhs.curve;
   node["delayPrec"] >> rhs.delayPrec;
@@ -179,9 +196,7 @@ bool convert<MixData>::decode(const Node& node, MixData& rhs)
   if (node["flightModes"]) {
     rhs.flightModes = YamlReadFlightModes(node["flightModes"]);
   }
-  if (node["offset"]) {
-    rhs.sOffset = YamlSourceNumRefDecode(node["offset"]);
-  }
+  node["offset"] >> rhs.offset;
   node["name"] >> rhs.name;
   return true;
 }

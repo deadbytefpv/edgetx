@@ -37,6 +37,7 @@ class CompoundItemModelFactory;
 class FilteredItemModel;
 class CurveImageWidget;
 class SourceNumRefEditor;
+class RadioDataConversionState;
 
 class CurveReference {
 
@@ -62,26 +63,27 @@ class CurveReference {
     };
 
     CurveReference() { clear(); }
-    CurveReference(CurveRefType type, int value) : type(type), value(value) { ; }
+    CurveReference(CurveRefType type, RawSource src) : type(type), src(src) { ; }
 
-    void clear() { memset(this, 0, sizeof(CurveReference)); }
-    const bool isEmpty() const { return type == CURVE_REF_DIFF && value == 0; }
+    void clear();
+    const bool isEmpty() const { return type == CURVE_REF_DIFF && src.index == 0; }
     const bool isSet() const { return !isEmpty(); }
     const bool isValueNumber() const;
     const bool isValueReference() const { return !isValueNumber(); }
     const QString toString(const ModelData * model = nullptr, bool verbose = true, const GeneralSettings * const generalSettings = nullptr,
                            Board::Type board = Board::BOARD_UNKNOWN, bool prefixCustomName = true) const;
     const bool isAvailable() const;
+    CurveReference convert(RadioDataConversionState & cstate);
 
     CurveRefType type;
-    int value;
+    RawSource src;
 
     bool operator == ( const CurveReference & other) const {
-      return (this->type == other.type) && (this->value == other.value);
+      return (this->type == other.type) && (this->src == other.src);
     }
 
     bool operator != ( const CurveReference & other) const {
-      return (this->type != other.type) || (this->value != other.value);
+      return (this->type != other.type) || (this->src != other.src);
     }
 
     static int getDefaultValue(const CurveRefType type, const bool isGVar = false);

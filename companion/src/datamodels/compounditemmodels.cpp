@@ -105,11 +105,12 @@ RawSourceItemModel::RawSourceItemModel(const GeneralSettings * const generalSett
   AbstractDynamicItemModel(generalSettings, modelData, firmware, board, boardType)
 {
   setId(IMID_RawSource);
-  setUpdateMask(IMUE_All &~ (IMUE_Curves | IMUE_Scripts));
+  setUpdateMask(IMUE_All &~IMUE_Scripts);
 
   int groups = board->getCapability(Board::FunctionSwitchGroups);
-
+  int curves = firmware->getCapability(NumCurves);
   // Descending source direction: inverted (!) sources
+  addItems(SOURCE_TYPE_CURVE,          RawSource::CurvesGroup,   -curves);
   addItems(SOURCE_TYPE_TELEMETRY,      RawSource::TelemGroup,    -firmware->getCapability(Sensors) * 3);
   addItems(SOURCE_TYPE_TIMER,          RawSource::TelemGroup,    -firmware->getCapability(Timers));
   addItems(SOURCE_TYPE_SPECIAL,        RawSource::TelemGroup,    -(SOURCE_TYPE_SPECIAL_COUNT - 1));
@@ -151,6 +152,10 @@ RawSourceItemModel::RawSourceItemModel(const GeneralSettings * const generalSett
   addItems(SOURCE_TYPE_SPECIAL,        RawSource::TelemGroup,    SOURCE_TYPE_SPECIAL_COUNT - 1);
   addItems(SOURCE_TYPE_TIMER,          RawSource::TelemGroup,    firmware->getCapability(Timers));
   addItems(SOURCE_TYPE_TELEMETRY,      RawSource::TelemGroup,    firmware->getCapability(Sensors) * 3);
+  if (curves) {
+    addItems(SOURCE_TYPE_CURVE,        RawSource::CurvesGroup,     curves);
+    addItems(SOURCE_TYPE_CURVE_FUNC,   RawSource::CurveFuncsGroup, CURVE_FUNCS_COUNT);  // there is no inverted list
+  }
 }
 
 void RawSourceItemModel::setDynamicItemData(QStandardItem * item, const RawSource & src) const

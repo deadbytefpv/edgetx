@@ -27,45 +27,24 @@
 #include "curveimagewidget.h"
 #include "curvedialog.h"
 #include "sourcenumref.h"
+#include "radiodataconversionstate.h"
+
+void CurveReference::clear()
+{
+  type = CURVE_REF_DIFF;
+  src = RawSource();
+}
 
 const QString CurveReference::toString(const ModelData * model, bool verbose, const GeneralSettings * const generalSettings,
                                        Board::Type board, bool prefixCustomName) const
 {
-  if (value == 0)
-    return CPN_STR_NONE_ITEM;
-
-  QString ret;
-  unsigned idx = abs(value) - 1;
-
-  switch(type) {
-    case CURVE_REF_DIFF:
-    case CURVE_REF_EXPO:
-      ret = SourceNumRef(value).toString(model, generalSettings, board, prefixCustomName);
-      break;
-    case CURVE_REF_FUNC:
-      ret = functionToString(value);
-      break;
-    case CURVE_REF_CUSTOM:
-      if (model)
-        ret = model->curves[idx].nameToString(idx);
-      else
-        ret = CurveData().nameToString(idx);
-      if (value < 0)
-        ret.prepend(CPN_STR_SRC_INDICATOR_NEG);
-      break;
-    default:
-      return CPN_STR_UNKNOWN_ITEM;
-  }
-
-  if (verbose)
-    ret = tr(qPrintable(QString(typeToString(type) + "(%1)").arg(ret)));
-
-  return ret;
+  Q_UNUSED(verbose);
+  return src.toString(model, generalSettings, board, prefixCustomName);
 }
 
 const bool CurveReference::isValueNumber() const
 {
-  return (type == CURVE_REF_DIFF || type == CURVE_REF_EXPO) && SourceNumRef(value).isNumber();
+  return (type == CURVE_REF_DIFF || type == CURVE_REF_EXPO) && src.type == RawSourceType::SOURCE_TYPE_NUMBER;
 }
 
 const bool CurveReference::isAvailable() const
@@ -97,39 +76,9 @@ QString CurveReference::typeToString(const CurveRefType type)
 }
 
 //  static
-QString CurveReference::functionToString(const int value)
-{
-  const QStringList strl = { "x>0", "x<0", "|x|", "f>0", "f<0", "|f|" };
-  int idx = value - 1;
-
-  if (idx < 0 || idx >= strl.count())
-    return CPN_STR_UNKNOWN_ITEM;
-
-  return strl.at(idx);
-}
-
-//  static
 bool CurveReference::isTypeAvailable(const CurveRefType type)
 {
-  bool ret = false;
-  Firmware * fw = getCurrentFirmware();
-
-  switch(type) {
-    case CURVE_REF_DIFF:
-      if (fw->getCapability(HasInputDiff))
-        ret = true;
-      break;
-    case CURVE_REF_EXPO:
-      if (fw->getCapability(HasMixerExpo))
-        ret = true;
-      break;
-    case CURVE_REF_FUNC:
-    case CURVE_REF_CUSTOM:
-      ret = true;
-      break;
-  }
-
-  return ret;
+  return true;
 }
 
 //  static
@@ -138,12 +87,13 @@ bool CurveReference::isFunctionAvailable(const int value)
   return true;
 }
 
-//  static
-int CurveReference::functionCount()
+CurveReference CurveReference::convert(RadioDataConversionState & cstate)
 {
-  return 6;
-}
+  //cstate.setItemType(tr("CurveRef"), 1);
+  //RadioDataConversionState::LogField oldData(index, toString(cstate.fromModel(), cstate.fromGS(), cstate.fromType));
 
+  return *this;
+}
 
 /*
  * CurveReferenceUIManager
