@@ -116,7 +116,6 @@ void SourceNumRefEditor::cboValueChanged(int index)
 void SourceNumRefEditor::setVisible(bool state)
 {
   chkUseSource->setVisible(state);
-  cboValue->setVisible(state);
   sbxValue->setVisible(state);
 }
 
