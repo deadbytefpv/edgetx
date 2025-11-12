@@ -43,35 +43,35 @@ class SourceNumRef {
   Q_DECLARE_TR_FUNCTIONS(SourceNumRef)
 
   public:
-    SourceNumRef() : srcNum(RawSource()) {}
-    explicit SourceNumRef(int value) : srcNum(RawSource(value)) {}
-    SourceNumRef(RawSourceType type, int index = 0) : srcNum(RawSource(type, index)) {}
+    SourceNumRef() : rawSource(RawSource()) {}
+    explicit SourceNumRef(int value) : rawSource(RawSource(value)) {}
+    SourceNumRef(RawSourceType type, int index = 0) : rawSource(RawSource(type, index)) {}
 
     virtual ~SourceNumRef() {}
 
-    int toValue() { return srcNum.toValue(); }
+    int toValue() { return rawSource.toValue(); }
 
     QString toString(const ModelData * model = nullptr, const GeneralSettings * const generalSettings = nullptr,
                      Board::Type board = Board::BOARD_UNKNOWN, bool prefixCustomName = true) const;
 
-    const bool isNumber() const { return srcNum.type == SOURCE_TYPE_NONE; }
-    const bool isSource() const { return srcNum.type != SOURCE_TYPE_NONE; }
+    const bool isNumber() const { return rawSource.type == SOURCE_TYPE_NONE; }
+    const bool isSource() const { return rawSource.type != SOURCE_TYPE_NONE; }
     static int getDefault(int useSource, int dflt);
 
   private:
-    RawSource srcNum;
+    RawSource rawSource;
 };
 
-class SourceNumRefEditor : public QObject {
+class SourceNumRefUIEditor : public QObject {
 
   Q_OBJECT
 
   public:
-    explicit SourceNumRefEditor(int & srcNumValue, QCheckBox * chkUseSource, QSpinBox * sbxValue, QComboBox * cboValue,
+    explicit SourceNumRefUIEditor(RawSource & rawSource, QCheckBox * chkUseSource, QSpinBox * sbxValue, QComboBox * cboValue,
                                 int defValue, int minValue, int maxValue, int step,
                                 ModelData & model, FilteredItemModel * sourceItemModel, QObject * parent = nullptr);
 
-    virtual ~SourceNumRefEditor() {}
+    virtual ~SourceNumRefUIEditor() {}
 
     void setLock(bool state) { lock = state; }
     void setVisible(bool state);
@@ -86,7 +86,7 @@ class SourceNumRefEditor : public QObject {
     void cboValueChanged(int index);
 
   protected:
-    int &srcNumValue;
+    RawSource &rawSource;
     QCheckBox *chkUseSource;
     QSpinBox *sbxValue;
     QComboBox *cboValue;

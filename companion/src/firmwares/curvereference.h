@@ -49,36 +49,36 @@ class CurveReference {
       CURVE_REF_EXPO,
       CURVE_REF_FUNC,
       CURVE_REF_CUSTOM,
-      MAX_CURVE_REF_TYPE = CURVE_REF_CUSTOM
+      MAX_CURVE_REF_COUNT
     };
 
     CurveReference();
 
-    CurveReference(CurveRefType type, RawSource src) :
+    CurveReference(CurveRefType type, RawSource rawSource) :
       type(type),
-      src(src)
+      rawSource(rawSource)
     {}
 
     void clear();
-    const bool isEmpty() const { return type == CURVE_REF_DIFF && src.index == 0; }
+    const bool isEmpty() const { return type == CURVE_REF_DIFF && rawSource.index == 0; }
     const bool isSet() const { return !isEmpty(); }
     const QString toString(const ModelData * model = nullptr, bool verbose = true, const GeneralSettings * const generalSettings = nullptr,
                            Board::Type board = Board::BOARD_UNKNOWN, bool prefixCustomName = true) const;
     CurveReference convert(RadioDataConversionState & cstate);
 
     CurveRefType type;
-    RawSource src;
+    RawSource rawSource;
 
     bool operator == ( const CurveReference & other) const {
-      return (this->type == other.type) && (this->src == other.src);
+      return (this->type == other.type) && (this->rawSource == other.rawSource);
     }
 
     bool operator != ( const CurveReference & other) const {
-      return (this->type != other.type) || (this->src != other.src);
+      return (this->type != other.type) || (this->rawSource != other.rawSource);
     }
 
-    static int getDefaultValue(const CurveRefType type);
-    static QString typeToString(const CurveRefType type);
+    static CurveReference getDefaultValue(const CurveRefType type);
+    static QString typeToString(const int type);
     static AbstractItemModel *typeItemModel();
 };
 
@@ -111,6 +111,6 @@ class CurveReferenceUIManager : public QObject {
     QComboBox *cboType;
     CurveImageWidget *curveImage;
     CurveReference &curveRef;
-    SourceNumRefEditor *srcNumRefEditor;
+    SourceNumRefUIEditor *sourceNumRefUIEditor;
     bool lock;
 };

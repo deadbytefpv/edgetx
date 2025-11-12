@@ -29,6 +29,8 @@
 #include "sourcenumref.h"
 #include "radiodataconversionstate.h"
 
+constexpr char AIM_CRVREF_TYPE[]  {"curvereference.type"};
+
 CurveReference::CurveReference()
 {
   clear();
@@ -37,42 +39,60 @@ CurveReference::CurveReference()
 void CurveReference::clear()
 {
   type = CURVE_REF_DIFF;
-  src = RawSource();
+  rawSource = RawSource();
 }
 
 const QString CurveReference::toString(const ModelData * model, bool verbose, const GeneralSettings * const generalSettings,
                                        Board::Type board, bool prefixCustomName) const
 {
   Q_UNUSED(verbose);
-  return src.toString(model, generalSettings, board, prefixCustomName);
+  return rawSource.toString(model, generalSettings, board, prefixCustomName);
 }
 
 //  static
-int CurveReference::getDefaultValue(const CurveRefType type)
+CurveReference CurveReference::getDefaultValue(const CurveRefType type)
 {
-  if (type == CURVE_REF_DIFF || type == CURVE_REF_EXPO)
-    return SourceNumRef(SOURCE_TYPE_GVAR, 1).toValue();
-  else if (type == CURVE_REF_FUNC)
-    return 1;
+  CurveReference cr;
+  cr.type = type;
+  if (type == CURVE_REF_FUNC)
+    cr.rawSource = RawSource(SOURCE_TYPE_CURVE_FUNC, 1);
+  else if (type == CURVE_REF_CUSTOM)
+    cr.rawSource = RawSource(SOURCE_TYPE_CURVE, 1);
   else
-    return 0;
+    cr.rawSource = RawSource();
+
+  return cr;
 }
 
 //  static
-QString CurveReference::typeToString(const CurveRefType type)
+QString CurveReference::typeToString(const int type)
 {
   const QStringList strl = { tr("Diff"), tr("Expo") , tr("Func"), tr("Custom") };
   int idx = (int)type;
 
-  if (idx < 0 || idx >= strl.size())
+  if (idx < 0 || idx > MAX_CURVE_REF_COUNT)
     return CPN_STR_UNKNOWN_ITEM;
 
   return strl.at(idx);
 }
 
+//  static
+AbstractItemModel *CurveReference::typeItemModel()
+{
+   AbstractStaticItemModel * mdl = new AbstractStaticItemModel();
+   mdl->setName(AIM_CRVREF_TYPE);
+
+   for (int i = 0; i < MAX_CURVE_REF_COUNT; i++) {
+     mdl->appendToItemList(typeToString(i), i);
+   }
+
+   mdl->loadItemList();
+   return mdl;
+}
+
 CurveReference CurveReference::convert(RadioDataConversionState & cstate)
 {
-  src = src.convert(cstate);
+  rawSource = rawSource.convert(cstate);
 }
 
 /*
@@ -89,17 +109,17 @@ CurveReferenceUIManager::CurveReferenceUIManager(QComboBox * cboType, QCheckBox 
   curveRef(curveRef),
   lock(false)
 {
-  srcNumRefEditor = new SourceNumRefEditor(curveRef.src, chkUseSource, sbxValue, cboSource, 0, -100, 100, 1, model, sharedItemModels);
+  sourceNumRefUIEditor = new SourceNumRefUIEditor(curveRef.rawSource, chkUseSource, sbxValue, cboSource, 0, -100, 100, 1, model, sharedItemModels);
 
   if (cboType) {
     cboType->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    cboType->setModel(CurveReference::typeItemModel()));
+    cboType->setModel(CurveReference::typeItemModel());
     cboType->setCurrentIndex(cboType->findData((int)curveRef.type));
     connect(cboType, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &CurveReferenceUIManager::cboTypeChanged);
   }
 
   if (curveImage) {
-    curveImage->set(&model, getCurrentFirmware(), sharedItemModels, curveRef.src.index, Qt::black, 3);
+    curveImage->set(&model, getCurrentFirmware(), sharedItemModels, curveRef.rawSource.index, Qt::black, 3);
     curveImage->setGrid(Qt::gray, 2);
     connect(curveImage, &CurveImageWidget::doubleClicked, this, &CurveReferenceUIManager::curveImageDoubleClicked);
   }
@@ -109,14 +129,14 @@ CurveReferenceUIManager::CurveReferenceUIManager(QComboBox * cboType, QCheckBox 
 
 CurveReferenceUIManager::~CurveReferenceUIManager()
 {
-  delete srcNumRefEditor;
+  delete sourceNumRefUIEditor;
 }
 
 void CurveReferenceUIManager::update()
 {
   lock = true;
 
-  srcNumRefEditor->setLock(true);
+  sourceNumRefUIEditor->setLock(true);
 
   int widgetsMask = 0;
 
@@ -124,19 +144,19 @@ void CurveReferenceUIManager::update()
     cboType->setCurrentIndex(cboType->findData(curveRef.type));
 
   if (curveRef.type == CurveReference::CURVE_REF_DIFF || curveRef.type == CurveReference::CURVE_REF_EXPO) {
-    srcNumRefEditor->setVisible(true);
-    srcNumRefEditor->update();
+    sourceNumRefUIEditor->setVisible(true);
+    sourceNumRefUIEditor->update();
   } else {
-    srcNumRefEditor->setVisible(false);
+    sourceNumRefUIEditor->setVisible(false);
   }
 
   if (curveImage) {
     if (curveRef.type == CurveReference::CURVE_REF_CUSTOM &&
-        curveRef.src.type == RawSourceType::SOURCE_TYPE_CURVE) {
-      curveImage->setIndex(curveRef.src.index);
+        curveRef.rawSource.type == RawSourceType::SOURCE_TYPE_CURVE) {
+      curveImage->setIndex(curveRef.rawSource.index);
 
-      if (abs(curveRef.src.index) > 0 && abs(curveRef.src.index) <= CPN_MAX_CURVES)
-        curveImage->setPen(colors[abs(curveRef.src.index) - 1], 3);
+      if (abs(curveRef.rawSource.index) > 0 && abs(curveRef.rawSource.index) <= CPN_MAX_CURVES)
+        curveImage->setPen(colors[abs(curveRef.rawSource.index) - 1], 3);
       else
         curveImage->setPen(Qt::black, 3);
 
@@ -149,7 +169,7 @@ void CurveReferenceUIManager::update()
 
   emit resized();
 
-  srcNumRefEditor->setLock(false);
+  sourceNumRefUIEditor->setLock(false);
 
   lock = false;
 }
@@ -158,13 +178,13 @@ void CurveReferenceUIManager::cboTypeChanged(int index)
 {
   if (!lock) {
     CurveReference::CurveRefType type = (CurveReference::CurveRefType)cboType->itemData(index).toInt();
-    curveRef = CurveReference(type, CurveReference::getDefaultValue(type));
+    curveRef = CurveReference::getDefaultValue(type);
     update();
   }
 }
 
 void CurveReferenceUIManager::curveImageDoubleClicked()
 {
-  if (curveRef.type == CurveReference::CURVE_REF_CUSTOM && abs(curveRef.value) > 0)
+  if (curveRef.type == CurveReference::CURVE_REF_CUSTOM && abs(curveRef.rawSource.index) > 0)
     curveImage->edit();
 }
