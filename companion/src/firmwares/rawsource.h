@@ -26,11 +26,16 @@
 #include "datahelpers.h"
 
 #include <QtCore>
+#include <QCheckBox>
+#include <QComboBox>
+#include <QSpinBox>
 
 class Firmware;
 class ModelData;
 class GeneralSettings;
 class RadioDataConversionState;
+class CompoundItemModelFactory;
+class FilteredItemModel;
 
 // TODO remove and refactor to use dynamic board switches
 enum Switches {
@@ -297,4 +302,49 @@ class RawSource {
     int index;
 
   private:
+};
+
+/*
+    RawSourceUIManager
+*/
+
+class RawSourceUIManager : public QObject {
+
+  Q_OBJECT
+
+  public:
+    explicit RawSourceUIManager(RawSource & rawSource, QCheckBox * chkUseSource,
+                                QSpinBox * sbxValue, QComboBox * cboValue,
+                                int defValue, int minValue, int maxValue, int step,
+                                ModelData & model,
+                                CompoundItemModelFactory * sharedItemModels,
+                                int filterFlags = 0,
+                                QObject * parent = nullptr);
+
+    virtual ~RawSourceUIManager() {}
+
+    void setDefault(int value);
+    void setFilterFlags(int flags);
+    void setLock(bool state) { lock = state; }
+    void setVisible(bool state);
+    void update();
+
+  signals:
+    void resized();
+
+  protected slots:
+    void chkUseSourceChanged(int state);
+    void sbxValueChanged();
+    void cboValueChanged(int index);
+
+  protected:
+    RawSource &rawSource;
+    QCheckBox *chkUseSource;
+    QSpinBox *sbxValue;
+    QComboBox *cboValue;
+    int defValue;
+    ModelData &model;
+    FilteredItemModel * filteredRawSourceItemModel;
+    int filterFlags;
+    bool lock;
 };

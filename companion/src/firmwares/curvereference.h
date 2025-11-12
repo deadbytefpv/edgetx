@@ -32,7 +32,7 @@
 
 class GeneralSettings;
 class ModelData;
-class CompoundItemModelFactory;
+class FilteredItemModel;
 class CurveImageWidget;
 class SourceNumRefEditor;
 class RadioDataConversionState;
@@ -87,15 +87,22 @@ class CurveReferenceUIManager : public QObject {
   Q_OBJECT
 
   public:
-    explicit CurveReferenceUIManager(QComboBox * cboType, QCheckBox * chkUseSource, QSpinBox * sbxValue, QComboBox * cboSource,
-                                     CurveImageWidget * curveImage, CurveReference & curveRef,
-                                     ModelData & model, CompoundItemModelFactory * sharedItemModels,
+    explicit CurveReferenceUIManager(QComboBox * cboType, QCheckBox * chkUseSource,
+                                     QSpinBox * sbxValue,
+                                     QComboBox * cboSource, CurveImageWidget * curveImage,
+                                     CurveReference & curveRef,
+                                     ModelData & model,
+                                     CompoundItemModelFactory * sharedItemModels,
                                      QObject * parent = nullptr);
 
-    explicit CurveReferenceUIManager(QComboBox *cboSource, CurveImageWidget * curveImage, CurveReference & curveRef, ModelData & model,
-                                     CompoundItemModelFactory * sharedItemModels, QObject * parent = nullptr) :
-                CurveReferenceUIManager(nullptr, nullptr, nullptr, cboSource, curveImage, curveRef, model, sharedItemModels,
-                                        parent) {}
+    explicit CurveReferenceUIManager(QComboBox *cboSource, CurveImageWidget * curveImage,
+                                     CurveReference & curveRef,
+                                     ModelData & model,
+                                     CompoundItemModelFactory * sharedItemModels,
+                                     QObject * parent = nullptr) :
+      CurveReferenceUIManager(nullptr, nullptr, nullptr, cboSource, curveImage,
+                              curveRef, model, sharedItemModels, parent)
+    {}
 
     virtual ~CurveReferenceUIManager();
 
@@ -111,6 +118,6 @@ class CurveReferenceUIManager : public QObject {
     QComboBox *cboType;
     CurveImageWidget *curveImage;
     CurveReference &curveRef;
-    SourceNumRefUIEditor *sourceNumRefUIEditor;
+    RawSourceUIManager *rawSourceUIManager;
     bool lock;
 };

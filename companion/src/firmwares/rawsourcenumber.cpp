@@ -43,12 +43,16 @@ int SourceNumRef::getDefault(int useSource, int dflt)
 
 
 /*
- * SourceNumRefUIEditor
+ * RawSourceNumberUIManager
 */
 
-SourceNumRefUIEditor::SourceNumRefUIEditor(RawSource & rawSource, QCheckBox * chkUseSource, QSpinBox * sbxValue, QComboBox * cboValue,
-                                       int defValue, int minValue, int maxValue, int step,
-                                       ModelData & model, FilteredItemModel * sourceItemModel, QObject * parent) :
+RawSourceNumberUIManager::RawSourceNumberUIManager(RawSource & rawSource,
+                            QCheckBox * chkUseSource, QSpinBox * sbxValue,
+                            QComboBox * cboValue,
+                            int defValue, int minValue, int maxValue, int step,
+                            ModelData & model,
+                            FilteredItemModel * sourceItemModel,
+                            QObject * parent) :
   QObject(parent),
   rawSource(rawSource),
   chkUseSource(chkUseSource),
@@ -59,14 +63,16 @@ SourceNumRefUIEditor::SourceNumRefUIEditor(RawSource & rawSource, QCheckBox * ch
   lock(false)
 {
   if (chkUseSource)
-    connect(chkUseSource, &QCheckBox::checkStateChanged, this, &SourceNumRefEditor::chkUseSourceChanged);
+    connect(chkUseSource, &QCheckBox::checkStateChanged, this,
+              &RawSourceNumberUIManager::chkUseSourceChanged);
 
   if (sbxValue) {
     sbxValue->setMinimum(minValue);
     sbxValue->setMaximum(maxValue);
     sbxValue->setSingleStep(step);
     sbxValue->setValue(defValue);
-    connect(sbxValue, &QSpinBox::editingFinished, this, &SourceNumRefEditor::sbxValueChanged);
+    connect(sbxValue, &QSpinBox::editingFinished, this,
+              &RawSourceNumberUIManager::sbxValueChanged);
   }
 
   if (cboValue) {
@@ -74,16 +80,17 @@ SourceNumRefUIEditor::SourceNumRefUIEditor(RawSource & rawSource, QCheckBox * ch
     cboValue->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     cboValue->setMaxVisibleItems(10);
     cboValue->setCurrentIndex(Helpers::getFirstPosValueIndex(cboValue));
-    connect(cboValue, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SourceNumRefEditor::cboValueChanged);
+    connect(cboValue, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+              &RawSourceNumberUIManager::cboValueChanged);
   }
 
   update();
 }
 
-void SourceNumRefUIEditor::chkUseSourceChanged(int state)
+void RawSourceNumberUIManager::chkUseSourceChanged(int state)
 {
   if (!lock) {
-    rawSource = SourceNumRef::getDefault(state, defValue);
+    rawSource = RawSourceNumber::getDefault(state, defValue);
 
     if (state == Qt::Checked) {
       cboValue->setCurrentIndex(cboValue->findData(rawSource.toValue()));
@@ -97,7 +104,7 @@ void SourceNumRefUIEditor::chkUseSourceChanged(int state)
   }
 }
 
-void SourceNumRefUIEditor::sbxValueChanged()
+void RawSourceNumberUIManager::sbxValueChanged()
 {
   if (!lock) {
     rawSource.index = sbxValue->value();
@@ -105,7 +112,7 @@ void SourceNumRefUIEditor::sbxValueChanged()
   }
 }
 
-void SourceNumRefUIEditor::cboValueChanged(int index)
+void RawSourceNumberUIManager::cboValueChanged(int index)
 {
   if (!lock) {
     rawSource = cboValue->itemData(index).toInt();
@@ -113,13 +120,13 @@ void SourceNumRefUIEditor::cboValueChanged(int index)
   }
 }
 
-void SourceNumRefUIEditor::setVisible(bool state)
+void RawSourceNumberUIManager::setVisible(bool state)
 {
   chkUseSource->setVisible(state);
   sbxValue->setVisible(state);
 }
 
-void SourceNumRefUIEditor::update()
+void RawSourceNumberUIManager::update()
 {
   lock = true;
 

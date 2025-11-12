@@ -25,6 +25,9 @@
 #include "radiodata.h"
 #include "modeldata.h"
 #include "radiodataconversionstate.h"
+#include "helpers.h"
+#include "compounditemmodels.h"
+#include "filtereditemmodels.h"
 
 #include <float.h>
 
@@ -448,4 +451,137 @@ tbl.insert(tbl.end(), {
                           });
 
   return tbl;
+}
+
+/*
+ * RawSourceUIManager
+*/
+
+RawSourceUIManager::RawSourceUIManager(RawSource & rawSource,
+                            QCheckBox * chkUseSource, QSpinBox * sbxValue,
+                            QComboBox * cboValue,
+                            int defValue, int minValue, int maxValue, int step,
+                            ModelData & model,
+                            CompoundItemModelFactory * sharedItemModels,
+                            int filterFlags,
+                            QObject * parent) :
+  QObject(parent),
+  rawSource(rawSource),
+  chkUseSource(chkUseSource),
+  sbxValue(sbxValue),
+  cboValue(cboValue),
+  defValue(defValue),
+  model(model),
+  filterFlags(filterFlags),
+  lock(false)
+{
+  filteredRawSourceItemModel = new FilteredItemModel(sharedItemModels->getItemModel(AbstractItemModel::IMID_RawSource), filterFlags);
+
+  if (chkUseSource)
+    connect(chkUseSource, &QCheckBox::checkStateChanged, this,
+              &RawSourceUIManager::chkUseSourceChanged);
+
+  if (sbxValue) {
+    sbxValue->setMinimum(minValue);
+    sbxValue->setMaximum(maxValue);
+    sbxValue->setSingleStep(step);
+    sbxValue->setValue(defValue);
+    connect(sbxValue, &QSpinBox::editingFinished, this,
+              &RawSourceUIManager::sbxValueChanged);
+  }
+
+  if (cboValue) {
+    cboValue->setModel(filteredRawSourceItemModel);
+    cboValue->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    cboValue->setMaxVisibleItems(10);
+    cboValue->setCurrentIndex(Helpers::getFirstPosValueIndex(cboValue));
+    connect(cboValue, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+              &RawSourceUIManager::cboValueChanged);
+  }
+
+  update();
+}
+
+void RawSourceUIManager::chkUseSourceChanged(int state)
+{
+  if (!lock) {
+    rawSource = RawSource(defValue);
+
+    if (state == Qt::Checked) {
+      cboValue->setCurrentIndex(cboValue->findData(rawSource.toValue()));
+      if (cboValue->currentIndex() < 0)
+        cboValue->setCurrentIndex(Helpers::getFirstPosValueIndex(cboValue));
+    }
+    else
+      sbxValue->setValue(rawSource.toValue());
+
+    update();
+  }
+}
+
+void RawSourceUIManager::sbxValueChanged()
+{
+  if (!lock) {
+    rawSource.type = SOURCE_TYPE_NUMBER;
+    rawSource.index = sbxValue->value();
+    update();
+  }
+}
+
+void RawSourceUIManager::cboValueChanged(int index)
+{
+  if (!lock) {
+    rawSource = RawSource(cboValue->itemData(index).toInt());
+    update();
+  }
+}
+
+void RawSourceUIManager::setDefault(int value)
+{
+  defValue = value;
+}
+
+void RawSourceUIManager::setFilterFlags(int flags)
+{
+  filterFlags = flags;
+}
+
+void RawSourceUIManager::setVisible(bool state)
+{
+  chkUseSource->setVisible(state);
+  sbxValue->setVisible(state);
+}
+
+void RawSourceUIManager::update()
+{
+  lock = true;
+
+  if (rawSource.type == SOURCE_TYPE_NUMBER) {
+    if (chkUseSource)
+      chkUseSource->setChecked(false);
+
+    if (sbxValue) {
+      sbxValue->setValue(rawSource.index);
+      sbxValue->setVisible(true);
+    }
+
+    if (cboValue)
+      cboValue->setVisible(false);
+  }
+  else {
+    if (chkUseSource)
+      chkUseSource->setChecked(true);
+
+    if (sbxValue)
+      sbxValue->setVisible(false);
+
+    if (cboValue) {
+      cboValue->setCurrentIndex(cboValue->findData(rawSource.toValue()));
+      cboValue->setVisible(true);
+    }
+  }
+
+  emit resized();
+
+  lock = false;
 }

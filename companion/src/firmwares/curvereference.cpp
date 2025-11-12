@@ -26,7 +26,6 @@
 #include "compounditemmodels.h"
 #include "curveimagewidget.h"
 #include "curvedialog.h"
-#include "sourcenumref.h"
 #include "radiodataconversionstate.h"
 
 constexpr char AIM_CRVREF_TYPE[]  {"curvereference.type"};
@@ -93,23 +92,27 @@ AbstractItemModel *CurveReference::typeItemModel()
 CurveReference CurveReference::convert(RadioDataConversionState & cstate)
 {
   rawSource = rawSource.convert(cstate);
+  return *this;
 }
 
 /*
  * CurveReferenceUIManager
 */
 
-CurveReferenceUIManager::CurveReferenceUIManager(QComboBox * cboType, QCheckBox * chkUseSource, QSpinBox * sbxValue,
-                                                 QComboBox * cboSource, CurveImageWidget * curveImage,
-                                                 CurveReference & curveRef, ModelData & model, CompoundItemModelFactory * sharedItemModels,
-                                                 QObject * parent) :
+CurveReferenceUIManager::CurveReferenceUIManager(
+    QComboBox * cboType, QCheckBox * chkUseSource, QSpinBox * sbxValue,
+    QComboBox * cboSource, CurveImageWidget * curveImage, CurveReference & curveRef,
+    ModelData & model,
+    CompoundItemModelFactory * sharedItemModels,
+    QObject * parent) :
   QObject(parent),
   cboType(cboType),
   curveImage(curveImage),
   curveRef(curveRef),
   lock(false)
 {
-  sourceNumRefUIEditor = new SourceNumRefUIEditor(curveRef.rawSource, chkUseSource, sbxValue, cboSource, 0, -100, 100, 1, model, sharedItemModels);
+  rawSourceUIManager = new RawSourceUIManager(curveRef.rawSource, chkUseSource,
+    sbxValue, cboSource, 0, -100, 100, 1, model, sharedItemModels, 0, parent);
 
   if (cboType) {
     cboType->setSizeAdjustPolicy(QComboBox::AdjustToContents);
@@ -129,25 +132,23 @@ CurveReferenceUIManager::CurveReferenceUIManager(QComboBox * cboType, QCheckBox 
 
 CurveReferenceUIManager::~CurveReferenceUIManager()
 {
-  delete sourceNumRefUIEditor;
+  delete rawSourceUIManager;
 }
 
 void CurveReferenceUIManager::update()
 {
   lock = true;
 
-  sourceNumRefUIEditor->setLock(true);
-
-  int widgetsMask = 0;
+  rawSourceUIManager->setLock(true);
 
   if (cboType)
     cboType->setCurrentIndex(cboType->findData(curveRef.type));
 
   if (curveRef.type == CurveReference::CURVE_REF_DIFF || curveRef.type == CurveReference::CURVE_REF_EXPO) {
-    sourceNumRefUIEditor->setVisible(true);
-    sourceNumRefUIEditor->update();
+    rawSourceUIManager->setVisible(true);
+    rawSourceUIManager->update();
   } else {
-    sourceNumRefUIEditor->setVisible(false);
+    rawSourceUIManager->setVisible(false);
   }
 
   if (curveImage) {
@@ -169,7 +170,7 @@ void CurveReferenceUIManager::update()
 
   emit resized();
 
-  sourceNumRefUIEditor->setLock(false);
+  rawSourceUIManager->setLock(false);
 
   lock = false;
 }
