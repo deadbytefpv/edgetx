@@ -132,6 +132,53 @@ __weak void ledBlue()
 #endif
 }
 
+__weak void ledWht()
+{
+  ledOff();
+#if defined(LED_RED_GPIO)
+  GPIO_LED_GPIO_ON(LED_RED_GPIO);
+#endif
+#if defined(LED_GREEN_GPIO)
+  GPIO_LED_GPIO_ON(LED_GREEN_GPIO);
+#endif
+#if defined(LED_BLUE_GPIO)
+  GPIO_LED_GPIO_ON(LED_BLUE_GPIO);
+#endif
+}
+
+__weak void ledPnk()
+{
+  ledOff();
+#if defined(LED_RED_GPIO)
+  GPIO_LED_GPIO_ON(LED_RED_GPIO);
+#endif
+#if defined(LED_BLUE_GPIO)
+  GPIO_LED_GPIO_ON(LED_BLUE_GPIO);
+#endif
+}
+
+__weak void ledSap()
+{
+  ledOff();
+#if defined(LED_GREEN_GPIO)
+  GPIO_LED_GPIO_ON(LED_GREEN_GPIO);
+#endif
+#if defined(LED_BLUE_GPIO)
+  GPIO_LED_GPIO_ON(LED_BLUE_GPIO);
+#endif
+}
+
+__weak void ledYlw()
+{
+  ledOff();
+#if defined(LED_RED_GPIO)
+  GPIO_LED_GPIO_ON(LED_RED_GPIO);
+#endif
+#if defined(LED_GREEN_GPIO)
+  GPIO_LED_GPIO_ON(LED_GREEN_GPIO);
+#endif
+}
+
 #if defined(FUNCTION_SWITCHES_RGB_LEDS)
 __weak uint32_t fsGetLedRGB(uint8_t index)
 {
